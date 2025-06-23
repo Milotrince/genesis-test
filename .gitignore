@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Genesis
+Genesis/
+genesis-doc/
+
+# etc
+logs/
+out/
+objects/dex-urdf/robots/
+
+# IDE
+.vscode/
