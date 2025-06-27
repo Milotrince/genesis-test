@@ -417,9 +417,10 @@ def main():
             ani = visualizer.create_animation(interval=200)
             plt.show()
         elif choice == "3":
-            save_path = input("Enter save path (e.g., 'force_animation.gif'): ").strip()
+            default_path = "out/force_animation.gif"
+            save_path = input(f"Enter save path ({default_path}): ").strip()
             if not save_path:
-                save_path = "force_animation.gif"
+                save_path = "out/force_animation.gif"
             ani = visualizer.create_animation(interval=200, save_path=save_path)
             plt.show()
         else:

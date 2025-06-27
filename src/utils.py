@@ -28,3 +28,17 @@ def get_next_filename(path):
         if not os.path.exists(filename):
             return filename
         counter += 1
+
+import numpy as np
+def assert_allclose(actual, desired, *, atol=None, rtol=None, tol=None, err_msg=None):
+    assert (tol is not None) ^ (atol is not None or rtol is not None)
+    if all(isinstance(e, np.ndarray) and e.size == 0 for e in (actual, desired)):
+        return
+    if tol is not None:
+        atol = tol
+        rtol = tol
+    if rtol is None:
+        rtol = 0.0
+    if atol is None:
+        atol = 0.0
+    np.testing.assert_allclose(actual, desired, atol=atol, rtol=rtol, err_msg=err_msg)

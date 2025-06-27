@@ -17,12 +17,16 @@ class GenesisRunner(ABC):
         camera_fov=30,
         camera_res=(640, 480),
         show_fps=False,
+        max_fps=100,
         **scene_kwargs,
     ):
         self.gui = gui
         self.video_out = video_out
         self.video_fps = 1 / dt
+        self.dt = dt
         self.show_progress = show_progress
+        self.max_fps = max_fps
+        self.frame_interval = max(1, int(self.video_fps / max_fps)) if max_fps > 0 else 1
 
         gs.init(backend=backend, logging_level=None if logging else "warning")
         self.scene = gs.Scene(
@@ -37,9 +41,10 @@ class GenesisRunner(ABC):
             show_viewer=gui,
             **scene_kwargs,
         )
+
         self.cam = self.scene.add_camera(
-            res=camera_res, pos=camera_pos, lookat=camera_lookat, fov=camera_fov, GUI=self.gui
-        )
+                res=camera_res, pos=camera_pos, lookat=camera_lookat, fov=camera_fov, GUI=self.gui
+            ) if video_out else None
 
 
     def run(self, seconds=None, steps=None, **build_kwargs):
@@ -59,10 +64,12 @@ class GenesisRunner(ABC):
 
         self.setup()
         self.scene.build(**build_kwargs)
-        self.cam.start_recording()
+        if self.cam:
+            self.cam.start_recording()
 
+        gs.logger.info(f"Recording video at {min(self.video_fps, self.max_fps)} FPS")
         if seconds:
-            gs.logger.info(f"Running simulation for {seconds} seconds ({steps} steps with dt={self.scene.sim_options.dt} at {self.video_fps} FPS)")
+            gs.logger.info(f"Running simulation for {seconds} seconds ({steps} steps with dt={self.scene.sim_options.dt})")
         else:
             gs.logger.info(f"Running simulation for {steps} steps.")
 
@@ -74,13 +81,19 @@ class GenesisRunner(ABC):
             for i in steps_iter:
                 self.step(i)
                 self.scene.step()
-                self.cam.render()
+                # Only render frames at the specified max_fps rate
+                if self.cam and i % self.frame_interval == 0:
+                    self.cam.render()
         except KeyboardInterrupt:
             gs.logger.info("Simulation interrupted, exiting.")
         finally:
             gs.logger.info("Simulation finished.")
-            self.cam.stop_recording(save_to_filename=self.video_out, fps=self.video_fps)
-            gs.logger.info(f"Saved video to {self.video_out}")
+
+            if self.cam:
+                actual_fps = self.video_fps / self.frame_interval
+                self.cam.stop_recording(save_to_filename=self.video_out, fps=actual_fps)
+                gs.logger.info(f"Saved video to {self.video_out}")
+
             self.on_complete()
 
     @abstractmethod

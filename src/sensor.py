@@ -8,34 +8,36 @@ from datetime import datetime
 import numpy as np
 
 
-def get_vertex_forces(fem_solver):
-    """
-    Extract the XYZ forces applied to all FEM vertices.
-    
-    Forces are computed as the negative gradient of the elastic energy with respect to position.
-    This includes both elastic forces (from deformation) and inertial forces (from acceleration).
-    
-    Args:
-        fem_solver: FEMSolver instance that is currently active.
-        
-    Returns:
-        gs.Tensor: Vertex forces of shape (B, n_vertices, 3) where B is batch size
-    """
-    if not fem_solver.is_active():
-        return None
-        
-    return fem_solver.elements_v_energy.force
 
 
-def get_pinned_vertex_indices(original_verts, pinned_verts):
+def get_pinned_vertex_indices(original_verts, pinned_verts, tolerance=1e-6):
     """
     Get the indices of pinned vertices based on their positions.
     Note: trimesh is not guaranteed to preserve vertex order.
+    
+    Args:
+        original_verts: Array of vertex positions from the original mesh
+        pinned_verts: Array of pinned vertex positions 
+        tolerance: Tolerance for floating-point comparison (default: 1e-6)
     """
     pinned_indices = []
+    
+    # Convert to numpy arrays if they aren't already
+    original_verts = np.asarray(original_verts)
+    pinned_verts = np.asarray(pinned_verts)
+    
     for i, coord in enumerate(original_verts):
-        if coord in pinned_verts:
+        print(f"Checking vertex {i}: {coord}")
+        
+        # Check distance to all pinned vertices
+        distances = np.linalg.norm(pinned_verts - coord, axis=1)
+        closest_matches = np.where(distances < tolerance)[0]
+        
+        if len(closest_matches) > 0:
+            closest_idx = closest_matches[0]
+            print(f"Vert {i} matches pinned vertex {closest_idx} with distance {distances[closest_idx]:.2e}")
             pinned_indices.append(i)
+    
     return pinned_indices
 
 
