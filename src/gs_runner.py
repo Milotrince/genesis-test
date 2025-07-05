@@ -1,6 +1,7 @@
 import genesis as gs
 from abc import ABC, abstractmethod
 
+import IPython
 
 class GenesisRunner(ABC):
     def __init__(
