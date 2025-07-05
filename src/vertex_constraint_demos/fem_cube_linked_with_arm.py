@@ -164,7 +164,7 @@ def main():
         gs.logger.info("Simulation finished.")
 
         actual_fps = video_fps / frame_interval
-        video_filename = f"out/arm_link_{args.solver}_dt={dt}_substeps={substeps}.mp4"
+        video_filename = f"cube_link_arm_{args.solver}_dt={dt}_substeps={substeps}.mp4"
         cam.stop_recording(save_to_filename=video_filename, fps=actual_fps)
         gs.logger.info(f"Saved video to {video_filename}")
 
