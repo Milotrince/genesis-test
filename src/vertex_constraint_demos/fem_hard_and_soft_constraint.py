@@ -56,7 +56,6 @@ def main():
         show_viewer=args.vis,
     )
 
-    # Setup scene entities
     scene.add_entity(gs.morphs.Plane())
 
     blob = scene.add_entity(
