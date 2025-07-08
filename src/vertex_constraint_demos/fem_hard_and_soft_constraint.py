@@ -122,9 +122,8 @@ def main():
         blob.set_vertex_constraints(
             vertex_indices=pinned_idx,
             target_positions=target_positions,
-            constraint_type="soft",
+            is_soft_constraint=True,
             stiffness=1e4,
-            damping=1e1,
         )
 
         target_positions = get_next_circle_position()

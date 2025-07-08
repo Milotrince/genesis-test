@@ -124,7 +124,6 @@ def main():
         pin_idx = [1, 5]
         cube.set_vertex_constraints(
             vertex_indices=pin_idx,
-            constraint_type="hard",
             link=end_joint.link,
         )
         print("Cube initial positions:", cube.init_positions[pin_idx])
