@@ -1,8 +1,6 @@
-import genesis as gs
-import numpy as np
 import argparse
-from tqdm import tqdm
-from rigid_tactile_sensor import RigidForceSensor
+import genesis as gs
+from genesis.engine.sensors import ContactSensor
 
 def main():
     parser = argparse.ArgumentParser()
@@ -49,18 +47,23 @@ def main():
     # Setup scene entities
     scene.add_entity(gs.morphs.Plane())
 
-    rigid_sensor = scene.add_entity(
+    sensor = scene.add_sensor(
+        ContactSensor,
         morph=gs.morphs.Box(
-            pos=(0.5, 0.0, 0.05),
-            size=(0.50, 0.50, 0.05),
+            pos=(0.5, 0.0, 2.0),
+            size=(0.2, 0.1, 0.1),
         ),
     )
-    rigid_sensor.apply_plugin(RigidForceSensor())
 
+    robot = scene.add_entity(
+        gs.morphs.MJCF(file="xml/franka_emika_panda/panda.xml"),
+    )
+    hand = robot.get_link("hand")
+    sensor_hand = robot.add_sensor(ContactSensor, link_idx=hand.idx)
 
     # Setup camera for recording
     video_fps = 1 / args.dt
-    steps = int(args.seconds / video_fps)
+    steps = int(args.seconds * video_fps)
     max_fps = 100
     frame_interval = max(1, int(video_fps / max_fps)) if max_fps > 0 else 1
     cam = scene.add_camera(
@@ -75,8 +78,17 @@ def main():
     cam.start_recording()
 
     try:
-        for i in tqdm(range(steps), total=steps):
+        for i in range(steps):
             scene.step()
+
+            is_hand_contact = sensor_hand.read()
+            if is_hand_contact:
+                print(f"Step {i}: Hand sensor detected contact")
+
+            is_contact = sensor.read()
+            if is_contact:
+                print(f"Step {i}: Sensor detected contact")
+
             if i % frame_interval == 0:
                 cam.render()
 

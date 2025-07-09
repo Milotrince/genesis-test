@@ -34,7 +34,7 @@ def test_box_hard_vertex_constraint(show_viewer):
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
             dt=1e-3,
-            substeps=5,
+            substeps=2,
         ),
         fem_options=gs.options.FEMOptions(
             use_implicit_solver=False,
@@ -107,16 +107,17 @@ def test_box_hard_vertex_constraint(show_viewer):
             tol=1e-3
         ), "Vertices should have moved after removing constraints"
 
+
 def test_box_soft_vertex_constraint(show_viewer):
     """Test if a box with strong soft vertex constraints has those vertices near."""
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
-            dt=1e-3,
-            substeps=5,
+            dt=1e-4,
+            substeps=10,
         ),
         fem_options=gs.options.FEMOptions(
             use_implicit_solver=False,
-            gravity=(0.0, 0.0, -9.81),
+            gravity=(0.0, 0.0, 0.0),
         ),
         show_viewer=show_viewer,
         show_FPS=False,
@@ -145,8 +146,9 @@ def test_box_soft_vertex_constraint(show_viewer):
         vertex_indices=vertex_indices,
         target_positions=target_positions,
         is_soft_constraint=True,
-        stiffness=1.e6
+        stiffness=1.e9
     )
+    box.set_velocity(gs.tensor([0.0, 1.0, 0.0]))
 
     for _ in range(1000):
         scene.step()
@@ -156,14 +158,14 @@ def test_box_soft_vertex_constraint(show_viewer):
     assert_allclose(
         positions,
         target_positions,
-        tol=5e-3
-    )
+        tol=1e-5
+    ), "Vertices should be near target positions with strong soft constraints"
 
 
 
 if __name__ == "__main__":
     gs.init(backend=gs.gpu)
-    print("test_box_hard_vertex_constraint")
-    test_box_hard_vertex_constraint(show_viewer=False)
+    # print("test_box_hard_vertex_constraint")
+    # test_box_hard_vertex_constraint(show_viewer=False)
     print("test_box_soft_vertex_constraint")
     test_box_soft_vertex_constraint(show_viewer=False)
