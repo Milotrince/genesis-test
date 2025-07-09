@@ -1,6 +1,7 @@
 import argparse
 import genesis as gs
 from genesis.engine.sensors import ContactSensor
+from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser()
@@ -51,7 +52,7 @@ def main():
         ContactSensor,
         morph=gs.morphs.Box(
             pos=(0.5, 0.0, 2.0),
-            size=(0.2, 0.1, 0.1),
+            size=(0.05, 0.05, 0.2),
         ),
     )
 
@@ -78,16 +79,16 @@ def main():
     cam.start_recording()
 
     try:
-        for i in range(steps):
+        for i in tqdm(range(steps), total=steps):
             scene.step()
 
             is_hand_contact = sensor_hand.read()
             if is_hand_contact:
-                print(f"Step {i}: Hand sensor detected contact")
+                scene.draw_debug_spheres(poss=hand.get_pos(), radius=0.06, color=(1, 0, 0, 0.4))
 
             is_contact = sensor.read()
             if is_contact:
-                print(f"Step {i}: Sensor detected contact")
+                scene.draw_debug_spheres(poss=sensor.entity.get_pos(), radius=0.06, color=(0, 0, 1, 0.4))
 
             if i % frame_interval == 0:
                 cam.render()
