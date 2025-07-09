@@ -113,7 +113,7 @@ def test_box_soft_vertex_constraint(show_viewer):
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
             dt=1e-4,
-            substeps=10,
+            substeps=1,
         ),
         fem_options=gs.options.FEMOptions(
             use_implicit_solver=False,
@@ -146,11 +146,11 @@ def test_box_soft_vertex_constraint(show_viewer):
         vertex_indices=vertex_indices,
         target_positions=target_positions,
         is_soft_constraint=True,
-        stiffness=1.e9
+        stiffness=1.e7
     )
     box.set_velocity(gs.tensor([0.0, 1.0, 0.0]))
 
-    for _ in range(1000):
+    for _ in range(10000):
         scene.step()
 
     positions = box.get_state().pos[0][vertex_indices]
@@ -164,8 +164,10 @@ def test_box_soft_vertex_constraint(show_viewer):
 
 
 if __name__ == "__main__":
+    from genesis_scripts.utils import Timer
     gs.init(backend=gs.gpu)
     # print("test_box_hard_vertex_constraint")
     # test_box_hard_vertex_constraint(show_viewer=False)
-    print("test_box_soft_vertex_constraint")
-    test_box_soft_vertex_constraint(show_viewer=False)
+    with Timer():
+        print("test_box_soft_vertex_constraint")
+        test_box_soft_vertex_constraint(show_viewer=False)

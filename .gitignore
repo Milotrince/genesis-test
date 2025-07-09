@@ -9,10 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Genesis
-Genesis/
-genesis-doc/
-
 # etc
 logs/
 out/
