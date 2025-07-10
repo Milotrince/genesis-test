@@ -25,6 +25,17 @@ def main():
         help="Number of substeps (auto-selected based on solver if not specified)"
     )
     parser.add_argument(
+        "--n_envs",
+        type=int,
+        default=0,
+        help="Number of environments (default: 0)"
+    )
+    parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Use CPU instead of GPU"
+    )
+    parser.add_argument(
         "--vis", "-v",
         action="store_true",
         help="Show visualization GUI"
@@ -39,7 +50,7 @@ def main():
         dt = args.dt if args.dt is not None else 1e-3
         substeps = args.substeps if args.substeps is not None else 1
 
-    gs.init(backend=gs.gpu, logging_level=None)
+    gs.init(backend=gs.cpu if args.cpu else gs.gpu, logging_level=None)
     
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
@@ -75,7 +86,6 @@ def main():
     video_fps = 1 / dt
     max_fps = 100
     frame_interval = max(1, int(video_fps / max_fps)) if max_fps > 0 else 1
-    print(f"video_fps: {video_fps}, frame_interval: {frame_interval}")
     
     cam = scene.add_camera(
         res=(640, 480), 
@@ -85,7 +95,7 @@ def main():
         GUI=args.vis
     )
 
-    scene.build()
+    scene.build(n_envs=args.n_envs)
     cam.start_recording()
 
     pinned_idx = [0]
@@ -117,20 +127,20 @@ def main():
     total_steps = int(5 / dt) # 5 seconds
 
     try:
-        target_positions = blob.init_positions[pinned_idx]
-        scene.draw_debug_spheres(poss=target_positions, radius=0.02, color=(1, 0, 1, 0.8))
+        target_poss = blob.init_positions[pinned_idx]
+        scene.draw_debug_spheres(poss=target_poss, radius=0.02, color=(1, 0, 1, 0.8))
         blob.set_vertex_constraints(
-            vertex_indices=pinned_idx,
-            target_positions=target_positions,
+            verts_idx=pinned_idx,
+            target_poss=target_poss,
             is_soft_constraint=True,
-            stiffness=1e4,
+            stiffness=1e6,
         )
 
-        target_positions = get_next_circle_position()
-        debug_circle = scene.draw_debug_spheres(poss=target_positions, radius=0.02, color=(0, 1, 0, 0.8))
+        target_poss = get_next_circle_position()
+        debug_circle = scene.draw_debug_spheres(poss=target_poss, radius=0.02, color=(0, 1, 0, 0.8))
         cube.set_vertex_constraints(
-            vertex_indices=pinned_idx,
-            target_positions=target_positions,
+            verts_idx=pinned_idx,
+            target_poss=target_poss,
         )
 
         for step in tqdm(range(total_steps), total=total_steps):            
@@ -140,8 +150,8 @@ def main():
             new_pos = get_next_circle_position()
             debug_circle = scene.draw_debug_spheres(poss=new_pos, radius=0.02, color=(0, 1, 0, 0.8))
             cube.update_constraint_targets(
-                vertex_indices=pinned_idx,
-                target_positions=new_pos,
+                verts_idx=pinned_idx,
+                target_poss=new_pos,
             )
 
             scene.step()
@@ -155,7 +165,7 @@ def main():
         gs.logger.info("Simulation finished.")
 
         actual_fps = video_fps / frame_interval
-        video_filename = f"fem_hard_soft_{args.solver}_dt={dt}_substeps={substeps}.mp4"
+        video_filename = f"fem_hard_soft_{args.solver}_nenvs={args.n_envs}_dt={dt}_substeps={substeps}.mp4"
         cam.stop_recording(save_to_filename=video_filename, fps=actual_fps)
         gs.logger.info(f"Saved video to {video_filename}")
 
