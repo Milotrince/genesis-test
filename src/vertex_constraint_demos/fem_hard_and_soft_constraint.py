@@ -95,7 +95,7 @@ def main():
         GUI=args.vis
     )
 
-    scene.build(n_envs=args.n_envs)
+    scene.build(n_envs=args.n_envs, env_spacing=(0.2, 0.2))
     cam.start_recording()
 
     pinned_idx = [0]

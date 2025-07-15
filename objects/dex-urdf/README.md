@@ -1,1 +1,0 @@
-This is a stripped down version of [dex-urdf](https://github.com/dexsuite/dex-urdf) that just has the robot assets.
