@@ -1,10 +1,10 @@
 import argparse
-import genesis as gs
-from genesis.sensors import DataRecordingOptions, RigidContactForceGridSensor
-from genesis.sensors.data_handlers import VideoFileStreamer, CSVFileWriter, NPZFileWriter
+import numpy as np
 from tqdm import tqdm
 
-import numpy as np
+import genesis as gs
+from genesis.sensors import RecordingOptions, RigidContactForceGridSensor, SensorDataRecorder
+from genesis.sensors.data_handlers import VideoFileStreamer, NPZFileWriter
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -55,9 +55,7 @@ def main():
 
     scene.add_entity(gs.morphs.Plane())
 
-    block_sensor = scene.add_sensor(
-        RigidContactForceGridSensor,
-        grid_size=(4, 4, 2),
+    block = scene.add_entity(
         morph=gs.morphs.Box(
             pos=(0.0, 0.0, 0.05),
             size=(2.0, 2.0, 0.1),
@@ -94,29 +92,30 @@ def main():
 
     scene.build(n_envs=args.n_envs)
 
-    cam.start_recording(
-        DataRecordingOptions(
-            handler=VideoFileStreamer(filename="grid_test.mp4", fps=1 / args.dt)
-        )
+    grid_sensor = RigidContactForceGridSensor(
+        block, grid_size=(4, 4, 2)
     )
-    block_sensor.start_recording(
-        # DataRecordingOptions(handler=CSVFileWriter(filename="grid_test.csv"))
-        DataRecordingOptions(handler=NPZFileWriter(filename="grid_test.npz"))
+    data_recorder = SensorDataRecorder(step_dt=args.dt)
+    data_recorder.add_sensor(
+        cam, RecordingOptions(handler=VideoFileStreamer(filename="grid_test.mp4", fps=1 / args.dt))
     )
+    data_recorder.add_sensor(
+        grid_sensor, RecordingOptions(handler=NPZFileWriter(filename="grid_test.npz"))
+    )
+
+    data_recorder.start_recording()
 
     try:
         for _ in tqdm(range(steps), total=steps):
             scene.step()
+            data_recorder.step()
 
     except KeyboardInterrupt:
         gs.logger.info("Simulation interrupted, exiting.")
     finally:
         gs.logger.info("Simulation finished.")
 
-        from utils import timer
-
-        with timer():
-            scene.stop_recording_all()
+        data_recorder.stop_recording()
 
 
 if __name__ == "__main__":

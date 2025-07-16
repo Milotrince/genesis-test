@@ -1,6 +1,6 @@
 import argparse
 import genesis as gs
-from genesis.sensors import RigidContactSensor, RigidContactForceSensor, DataRecordingOptions
+from genesis.sensors import RigidContactSensor, RigidContactForceSensor, RecordingOptions, SensorDataRecorder
 from genesis.sensors.data_handlers import NPZFileWriter, CSVFileWriter, VideoFileStreamer
 from tqdm import tqdm
 import numpy as np
@@ -84,18 +84,18 @@ def main():
         dofs_position = [dofs_position] * args.n_envs
     robot.set_dofs_position(np.array(dofs_position))
 
-    # cam.start_recording()
-    cam.start_recording(
-        DataRecordingOptions(
-            handler=VideoFileStreamer(filename="camera_sensor.mp4", fps=1 / args.dt)
-        )
+    data_recorder = SensorDataRecorder(step_dt=args.dt)
+    data_recorder.add_sensor(
+        cam, RecordingOptions(handler=VideoFileStreamer(filename="camera_sensor.mp4", fps=1 / args.dt))
     )
-    block_contact_sensor.start_recording(
-        DataRecordingOptions(handler=CSVFileWriter(filename="contact_sensor.csv"))
+    data_recorder.add_sensor(
+        block_contact_sensor, RecordingOptions(handler=CSVFileWriter(filename="contact_sensor.csv"))
     )
-    hand_force_sensor.start_recording(
-        DataRecordingOptions(handler=NPZFileWriter(filename="force_contact_sensor.npz"))
+    data_recorder.add_sensor(
+        hand_force_sensor, RecordingOptions(handler=NPZFileWriter(filename="force_contact_sensor.npz"))
     )
+
+    data_recorder.start_recording()
 
     if args.n_envs > 0:
         gs.logger.info(
@@ -105,6 +105,7 @@ def main():
     try:
         for _ in tqdm(range(steps), total=steps):
             scene.step()
+            data_recorder.step()
 
             is_hand_contact = hand_contact_sensor.read()
             is_contact = block_contact_sensor.read()
@@ -129,8 +130,7 @@ def main():
     finally:
         gs.logger.info("Simulation finished.")
 
-        # cam.stop_recording(save_to_filename="camera_sensor.mp4", fps=1 / args.dt)
-        scene.stop_recording_all()
+        data_recorder.stop_recording()
 
 
 if __name__ == "__main__":
