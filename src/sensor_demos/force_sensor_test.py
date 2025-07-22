@@ -1,7 +1,7 @@
 import argparse
 
 import genesis as gs
-from genesis.sensors import RecordingOptions, RigidContactSensor, SensorDataRecorder
+from genesis.sensors import RecordingOptions, RigidContactForceSensor, SensorDataRecorder
 from genesis.sensors.data_handlers import CSVFileWriter, VideoFileWriter
 from tqdm import tqdm
 
@@ -47,7 +47,7 @@ def main():
             material=gs.materials.Rigid(),
         )
         blocks.append(block)
-        sensors.append(RigidContactSensor(entity=block))
+        sensors.append(RigidContactForceSensor(entity=block))
 
     steps = int(args.seconds / args.dt)
     cam = scene.add_camera(res=(640, 480), pos=(-2, 3, 2), lookat=(0.5, 0.5, 0.5), fov=30, GUI=args.vis)
@@ -62,9 +62,6 @@ def main():
         data_recorder.add_sensor(sensor, RecordingOptions(handler=CSVFileWriter(filename=f"contact_sensor_{i}.csv")))
 
     # data_recorder.start_recording()
-
-    if args.n_envs > 0:
-        gs.logger.info(f"Drawing contacts for first environment only (n_envs={args.n_envs})")
 
     for _ in tqdm(range(steps), total=steps):
         scene.step()
