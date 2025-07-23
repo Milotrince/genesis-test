@@ -1,9 +1,8 @@
-# Genesis Test
+# Genesis Test Scripts
 
-add to debug:
-`import IPython; IPython.embed()`
+this is where I keep my messy test scripts for playing with Genesis.
 
-clean: `gs clean`
+## notes
 
-
-uv pip install -e . --config-settings editable_mode=strict
+clean genesis & taichi caches: `gs clean`
+install: `uv pip install -e . --config-settings editable_mode=strict`

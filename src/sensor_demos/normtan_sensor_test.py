@@ -2,7 +2,7 @@ import argparse
 
 import genesis as gs
 import numpy as np
-from genesis.sensors import RecordingOptions, RigidContactForceSensor, SensorDataRecorder
+from genesis.sensors import RecordingOptions, RigidNormalTangentialForceSensor, SensorDataRecorder
 from genesis.sensors.data_handlers import CSVFileWriter, VideoFileWriter
 from tqdm import tqdm
 
@@ -44,14 +44,13 @@ def main():
     for i in range(args.b):
         block = scene.add_entity(
             morph=gs.morphs.Box(
-                pos=(0.2 * i, 0.0, 0.1 * i),
-                size=(0.05, 0.05, 0.1),
-                visualization=not args.vis,
+                pos=(0.02 * i, 0.0, 0.16 * i),
+                size=(0.05, 0.05, 0.08),
             ),
             material=gs.materials.Rigid(rho=i * 100 + 200),
         )
         blocks.append(block)
-        sensors.append(RigidContactForceSensor(entity=block))
+        sensors.append(RigidNormalTangentialForceSensor(entity=block))
 
     steps = int(args.seconds / args.dt)
     cam = scene.add_camera(res=(640, 480), pos=(-2, 3, 2), lookat=(0.5, 0.5, 0.5), fov=30, GUI=args.vis)
