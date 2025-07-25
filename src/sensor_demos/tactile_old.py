@@ -40,9 +40,7 @@ class OldRigidContactSensor(Sensor):
             return self._cached
 
         self._cls._last_contacts_update_step = self._sim.cur_step_global
-        self._cls._all_contacts = self._sim.rigid_solver.collider.get_contacts(
-            as_tensor=True, to_torch=True, keep_batch_dim=True
-        )
+        self._cls._all_contacts = self._sim.rigid_solver.collider.get_contacts(as_tensor=True, to_torch=True)
 
         contact_links = torch.cat([self._cls._all_contacts["link_a"], self._cls._all_contacts["link_b"]], dim=1)
         is_contact = (contact_links == self.link_idx).any(dim=1)
@@ -75,9 +73,7 @@ class OldRigidContactForceSensor(OldRigidContactSensor):
     def read(self, envs_idx=None):
         if self._cls._last_contacts_update_step != self._sim.cur_step_global:
             self._cls._last_contacts_update_step = self._sim.cur_step_global
-            self._cls._all_contacts = self._sim.rigid_solver.collider.get_contacts(
-                as_tensor=True, to_torch=True, keep_batch_dim=True
-            )
+            self._cls._all_contacts = self._sim.rigid_solver.collider.get_contacts(as_tensor=True, to_torch=True)
         if self._last_updated_step == self._sim.cur_step_global:
             return self._cached
 
@@ -87,10 +83,15 @@ class OldRigidContactForceSensor(OldRigidContactSensor):
 
         forces = self._cls._all_contacts["force"][mask]
         poss = self._cls._all_contacts["position"][mask]
-        if self._use_local_frame:
+
+        if forces.numel() > 0 and self._use_local_frame:
+            # Get environment indices for the masked contacts
+            env_indices = torch.arange(mask.shape[0], device=mask.device).unsqueeze(1).expand_as(mask)[mask]
             link_quat = self._sim.rigid_solver.get_links_quat(self.link_idx).squeeze(axis=1)
-            forces = inv_transform_by_quat(forces, link_quat)
-            poss = inv_transform_by_quat(poss, link_quat)
+            # Index quaternions by environment for each contact
+            contact_quats = link_quat[env_indices]
+            forces = inv_transform_by_quat(forces, contact_quats)
+            poss = inv_transform_by_quat(poss, contact_quats)
 
         self._cached = (tensor_to_array(forces), tensor_to_array(poss))
         self._last_updated_step = self._sim.cur_step_global
