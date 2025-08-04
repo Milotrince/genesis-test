@@ -1,10 +1,11 @@
 import argparse
 
-import genesis as gs
 import numpy as np
+from tqdm import tqdm
+
+import genesis as gs
 from genesis.sensors import RecordingOptions, RigidNormalTangentialForceSensor, SensorDataRecorder
 from genesis.sensors.data_handlers import CSVFileWriter, VideoFileWriter
-from tqdm import tqdm
 
 np.set_printoptions(suppress=True, precision=4, linewidth=120)
 
@@ -25,7 +26,7 @@ def main():
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
             dt=args.dt,
-            gravity=(0, 0, -9.81),
+            gravity=(0, 0, -10.0),
         ),
         profiling_options=gs.options.ProfilingOptions(
             show_FPS=False,
@@ -44,10 +45,10 @@ def main():
     for i in range(args.b):
         block = scene.add_entity(
             morph=gs.morphs.Box(
-                pos=(0.02 * i, 0.0, 0.16 * i),
-                size=(0.05, 0.05, 0.08),
+                pos=(0.1 * i, 0.0, 0.1 * i + 0.1),
+                size=(0.1, 0.1, 0.1),
             ),
-            material=gs.materials.Rigid(rho=i * 100 + 200),
+            material=gs.materials.Rigid(rho=(i + 1) * 1000),
         )
         blocks.append(block)
         sensors.append(RigidNormalTangentialForceSensor(entity=block))

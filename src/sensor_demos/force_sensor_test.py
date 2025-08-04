@@ -1,10 +1,11 @@
 import argparse
 
-import genesis as gs
 import numpy as np
+from tqdm import tqdm
+
+import genesis as gs
 from genesis.sensors import RecordingOptions, RigidContactForceSensor, SensorDataRecorder
 from genesis.sensors.data_handlers import CSVFileWriter, VideoFileWriter
-from tqdm import tqdm
 
 np.set_printoptions(suppress=True, precision=4, linewidth=120)
 
@@ -72,10 +73,8 @@ def main():
         # data_recorder.step()
 
         for i, sensor in enumerate(sensors):
-            if args.n_envs > 0:
-                print(f"sensor {i}:", sensor.read(envs_idx=0))
-            else:
-                print(f"sensor {i}:", sensor.read())
+            print(f"sensor {i}:", sensor.read().shape)
+            print(sensor.read())
 
     # data_recorder.stop_recording()
 

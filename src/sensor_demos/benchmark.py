@@ -7,7 +7,13 @@ from tqdm import tqdm
 
 import genesis as gs
 from genesis._main import clean
-from genesis.sensors import RigidContactForceGridSensor, RigidContactForceSensor, RigidContactSensor
+from genesis.sensors import (
+    RigidContactForceGridSensor,
+    RigidContactForceSensor,
+    RigidContactSensor,
+    RigidNormalTangentialForceGridSensor,
+    RigidNormalTangentialForceSensor,
+)
 from genesis.sensors.tactile_old import (
     OldRigidContactForceGridSensor,
     OldRigidContactForceSensor,
@@ -105,11 +111,13 @@ if __name__ == "__main__":
     times_dict["No Sensors"] = test_scene(args, sensor_type=None)
     for sensor_type in [
         RigidContactSensor,
-        OldRigidContactSensor,
+        # OldRigidContactSensor,
         RigidContactForceSensor,
-        OldRigidContactForceSensor,
+        RigidNormalTangentialForceSensor,
+        # OldRigidContactForceSensor,
         RigidContactForceGridSensor,
-        OldRigidContactForceGridSensor,
+        RigidNormalTangentialForceGridSensor,
+        # OldRigidContactForceGridSensor,
     ]:
         print(f"Testing {sensor_type.__name__}...")
         times_dict[sensor_type.__name__] = test_scene(args, sensor_type=sensor_type)

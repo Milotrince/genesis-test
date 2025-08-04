@@ -1,8 +1,9 @@
-import genesis as gs
 import torch
 
 # from .utils import assert_allclose
-from utils import assert_allclose
+from utils import assert_allclose, assert_array_equal
+
+import genesis as gs
 
 
 def test_rigid_tactile_sensors_gravity_force(show_viewer):
@@ -28,51 +29,71 @@ def test_rigid_tactile_sensors_gravity_force(show_viewer):
         ),
         material=gs.materials.Rigid(rho=1.0),  # mass = 1 kg
     )
+
     bool_sensor = gs.sensors.RigidContactSensor(entity=box)
-    grid_force_sensor = gs.sensors.RigidContactForceGridSensor(entity=box, grid_size=(1, 1, 2))
-    grid_normtan_force_sensor = gs.sensors.RigidNormalTangentialForceGridSensor(entity=box, grid_size=(1, 1, 2))
+    force_sensor = gs.sensors.RigidContactForceSensor(entity=box)
+    normtan_force_sensor = gs.sensors.RigidNormalTangentialForceSensor(entity=box)
+
+    grid_size = (1, 1, 2)
+    grid_bool_sensor = gs.sensors.RigidContactGridSensor(entity=box, grid_size=grid_size)
+    grid_force_sensor = gs.sensors.RigidContactForceGridSensor(entity=box, grid_size=grid_size)
+    grid_normtan_force_sensor = gs.sensors.RigidNormalTangentialForceGridSensor(entity=box, grid_size=grid_size)
 
     scene.build()
 
-    assert not bool_sensor.read(), "Sensor should not be in contact with the ground yet"
+    assert not bool_sensor.read()[0], "RigidContactSensor should not be in contact with the ground yet."
+    assert_array_equal(force_sensor.read(), 0.0), "RigidContactForceSensor should be zero before contact."
     (
-        assert_allclose(grid_force_sensor.read(), 0.0, tol=1e-9),
-        "Force should be zero before contact",
+        assert_array_equal(normtan_force_sensor.read(), 0.0),
+        "RigidNormalTangentialForceSensor should be zero before contact.",
     )
     (
-        assert_allclose(grid_normtan_force_sensor.read(), 0.0, tol=1e-9),
-        "Normal-tangential force should be zero before contact",
+        assert_array_equal(grid_bool_sensor.read(), False),
+        "RigidContactGridSensor should not be in contact with the ground yet.",
+    )
+    (
+        assert_array_equal(grid_force_sensor.read(), 0.0),
+        "RigidContactForceGridSensor should be zero before contact.",
+    )
+    (
+        assert_array_equal(grid_normtan_force_sensor.read(), 0.0),
+        "RigidNormalTangentialForceGridSensor should be zero before contact.",
     )
 
     for _ in range(500):
         scene.step()
 
-    assert bool_sensor.read(), "Sensor should detect contact with the ground"
-    grid_forces = grid_force_sensor.read()  # shape (batch_size, grid_x, grid_y, grid_z, 3)
+    assert bool_sensor.read()[0], "RigidContactSensor should detect contact with the ground"
     (
-        assert_allclose(
-            grid_forces[0, 0, 0, 0, :],
-            torch.tensor([0.0, 0.0, -GRAVITY]),
-            tol=1e-5,
-        ),
-        "Force should be equal to -gravity (normal) force at the bottom of the box",
+        assert_allclose(force_sensor.read()[0], torch.tensor([0.0, 0.0, -GRAVITY]), tol=1e-5),
+        "RigidContactForceSensor should detect force from gravity",
     )
     (
-        assert_allclose(grid_forces[0, 0, 0, 1, :], torch.tensor([0.0, 0.0, 0.0]), tol=1e-9),
-        "Force should be zero at the top of the box",
+        assert_allclose(normtan_force_sensor.read()[0], torch.tensor([-GRAVITY, 0.0, 0.0, 0.0]), tol=1e-5),
+        "RigidNormalTangentialForceSensor should detect force from gravity",
     )
-    grid_normtan_forces = grid_normtan_force_sensor.read()  # shape (batch_size, grid_x, grid_y, grid_z, 4)
+    assert not grid_bool_sensor.read()[0, 0, 0, 1], "Top of RigidContactGridSensor should not be detecting contact"
+    assert grid_bool_sensor.read()[0, 0, 0, 0], "Bottom of RigidContactGridSensor should detect contact with the ground"
+    (
+        assert_allclose(grid_force_sensor.read()[0, 0, 0, 1, :], torch.tensor([0.0, 0.0, 0.0]), tol=1e-9),
+        "RigidContactForceGridSensor should detect zero force at the top of the box",
+    )
+    (
+        assert_allclose(grid_force_sensor.read()[0, 0, 0, 0, :], torch.tensor([0.0, 0.0, -GRAVITY]), tol=1e-5),
+        "RigidContactForceGridSensor should detect -gravity (normal) force at the bottom of the box",
+    )
+
+    (
+        assert_allclose(grid_normtan_force_sensor.read()[0, 0, 0, 1, :], torch.tensor([0.0, 0.0, 0.0, 0.0]), tol=1e-9),
+        "RigidNormalTangentialForceGridSensor should detect zero tangential force at the top of the box",
+    )
     (
         assert_allclose(
-            grid_normtan_forces[0, 0, 0, 0, :],
+            grid_normtan_force_sensor.read()[0, 0, 0, 0, :],
             torch.tensor([-GRAVITY, 0.0, 0.0, 0.0]),
             tol=1e-5,
         ),
-        "Normal force should be equal to -gravity (normal) force at the bottom of the box, with no tangential force",
-    )
-    (
-        assert_allclose(grid_normtan_forces[0, 0, 0, 1, :], torch.tensor([0.0, 0.0, 0.0, 0.0]), tol=1e-9),
-        "Normal-tangential force should be zero at the top of the box",
+        "RigidNormalTangentialForceGridSensor should detect -gravity (normal) force at the bottom of the box, with no tangential force",
     )
 
 
